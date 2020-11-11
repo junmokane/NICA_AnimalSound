@@ -28,7 +28,7 @@ def load_data_from_filename_queue(filename_queue):
     image = examples['image']
     label = examples['label']
     image = tf.decode_raw(image, tf.float64)
-    image = tf.reshape(image, (40, 5))
+    image = tf.reshape(image, (40, 173, 1))
 
     return image, label
 

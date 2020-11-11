@@ -21,6 +21,7 @@ import os
 import pandas as pd
 from tqdm import tqdm
 import librosa
+from sklearn import preprocessing
 
 import tensorflow as tf
 import numpy as np
@@ -82,22 +83,24 @@ def generate_tfrecord(data_dir, save_dir, num_specs):
     labels = []
     data = pd.read_csv("./data/UrbanSound8K/metadata/UrbanSound8K.csv")
 
-    for i in tqdm(range(len(data))):
+    for i in range(len(data)):
         fold_no = str(data.iloc[i]["fold"])
         file = data.iloc[i]["slice_file_name"]
         label = data.iloc[i]["classID"]
-
+        filename = data_dir + fold_no + "/" + file
         if label in all_label:
-            filename = data_dir + fold_no + "/" + file
             y, sr = librosa.load(filename)
-            mfccs = np.mean(librosa.feature.mfcc(y, sr, n_mfcc=40).T, axis=0)
-            melspectrogram = np.mean(librosa.feature.melspectrogram(y=y, sr=sr, n_mels=40, fmax=8000).T, axis=0)
-            chroma_stft = np.mean(librosa.feature.chroma_stft(y=y, sr=sr, n_chroma=40).T, axis=0)
-            chroma_cq = np.mean(librosa.feature.chroma_cqt(y=y, sr=sr, n_chroma=40).T, axis=0)
-            chroma_cens = np.mean(librosa.feature.chroma_cens(y=y, sr=sr, n_chroma=40).T, axis=0)
-            features = np.reshape(np.vstack((mfccs, melspectrogram, chroma_stft, chroma_cq, chroma_cens)), (40, 5))
-            sounds.append(features)
-            labels.append(label)
+            S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=40, fmax=8000)
+            if S.shape[1] == 173:
+                sounds.append(S)
+                labels.append(label)
+
+    sounds = np.array(sounds, dtype=np.float64)
+    b, y, x = sounds.shape
+    assert np.all(sounds == np.reshape(np.reshape(sounds, (b, -1)), (b, y, x)))
+    sounds = np.reshape(preprocessing.scale(np.reshape(sounds, (b, -1))), (b, y, x))
+    #print(np.max(sounds), np.min(sounds),
+    #      np.mean(sounds, axis=0), np.var(sounds, axis=0))
 
     for i in range(len(sounds)):
         img = sounds[i]

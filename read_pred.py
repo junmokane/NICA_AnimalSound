@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 import inputs
 
-pred_path = './data/UrbanSound8K/pred'
+pred_path = './data/UrbanSound8K/rprey'
 pred_sound_ph, pred_label_ph = inputs.load_data([pred_path])
 
 sess = tf.Session()
